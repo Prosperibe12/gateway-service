@@ -28,15 +28,13 @@ ENV PROJ_NAME=server
 
 # Create a bash script to run the Flask project
 # This script will execute at runtime when the container starts 
-RUN printf "#!/bin/bash\n" > ./runner.sh && \
-    printf "RUN_PORT=\"\${PORT:-8080}\"\n\n" >> ./runner.sh && \
-    printf "gunicorn \${PROJ_NAME}:server --bind \"0.0.0.0:\$RUN_PORT\" --workers 2\n" >> ./runner.sh
+RUN echo -e "#!/bin/bash\nRUN_PORT=\"\${PORT:-8080}\"\ngunicorn \${PROJ_NAME}:server --bind \"0.0.0.0:\$RUN_PORT\" --workers 2" > ./runner.sh
 
 # Make the bash script executable
 RUN chmod +x runner.sh
 
 # Clean up apt cache to reduce image size
-RUN apt-get remove --purge -y \
+RUN apt-get remove --purge -y build-essential \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
