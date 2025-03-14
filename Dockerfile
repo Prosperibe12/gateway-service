@@ -7,8 +7,9 @@ ENV PYTHONUNBUFFERED=1
 
 # Install os dependencies for our mini vm
 RUN apt-get update \ 
-    && apt-get install -y --no-install-recommends --no-install-suggests \ 
-    build-essential \ 
+    && apt-get install -y --no-install-recommends --no-install-suggests \
+    build-essential \
+    dos2unix \
     && pip install --no-cache-dir --upgrade pip
 
 # Set the working directory to that same code directory
@@ -28,7 +29,10 @@ ENV PROJ_NAME=server
 
 # Create a bash script to run the Flask project
 # This script will execute at runtime when the container starts 
-RUN echo -e "#!/bin/bash\nRUN_PORT=\"\${PORT:-8080}\"\ngunicorn \${PROJ_NAME}:server --bind \"0.0.0.0:\$RUN_PORT\" --workers 2" > ./runner.sh
+RUN echo -e "#!/bin/sh\nRUN_PORT=\"\${PORT:-8080}\"\ngunicorn \${PROJ_NAME}:server --bind \"0.0.0.0:\$RUN_PORT\" --workers 2" > ./runner.sh
+
+# Convert the script to Unix-style line endings
+RUN dos2unix ./runner.sh
 
 # Make the bash script executable
 RUN chmod +x runner.sh
@@ -44,4 +48,4 @@ EXPOSE 8080
 
 # Run the Flask project via the runtime script
 # when the container starts
-CMD ["./runner.sh"]
+CMD ["bash", "./runner.sh"]
