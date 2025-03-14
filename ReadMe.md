@@ -12,4 +12,4 @@ The Gateway Service is a component of the microservices application. It acts as 
 visit [pdf2podcast-microservice](https://github.com/Prosperibe12/pdf2podcast-microservice)
 
 ## Contact
-For any questions or support, please contact [yourname@yourdomain.com](mailto:Prosperibe12@gmail.com).
+For any questions or support, please contact [Prosperibe12@gmail.com](mailto:Prosperibe12@gmail.com).
