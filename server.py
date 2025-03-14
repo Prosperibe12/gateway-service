@@ -1,14 +1,12 @@
 import os, gridfs, pika, json
 from flask import Flask, request
 from flask_pymongo import PyMongo
-from decouple import config
-from auth import validate
-from auth_svc import access
+from auth_svc.access import AuthService
 from storage import utils
 
 # instantiate flask and set mongodb url
 server = Flask(__name__)
-server.config["MONGO_URI"] = "mongodb"
+server.config["MONGO_URI"] = "mongodb://mongodb-service:27017/videos"
 
 # create a PyMongo and GridFs instance 
 mongo = PyMongo(server)
@@ -18,6 +16,9 @@ fs = gridfs.GridFS(mongo.db)
 # create a connection to Rabbitmq
 connection = pika.BlockingConnection(pika.URLParameters("rabbitmq"))
 channel = connection.channel()
+
+# create an instance of AuthService Class
+auth_svc = AuthService(os.environ.get("AUTH_SVC_ADDRESS"))
 
 @server.route("/", methods=["GET"])
 def home():
@@ -30,7 +31,7 @@ def login():
     Gateway Service login function.
     It validates user credentials by sending a request to the AUTH SERVICE.
     """
-    token, err = access.login(request)
+    token, err = auth_svc.login(request)
     if err:
         return {"error": err}, 401
     return {"token": token}, 200
@@ -42,7 +43,7 @@ def upload():
     Takes a user uploaded file, validates user authorization credentials and if valid,
     puts a message in queue for converter service.
     """
-    access_data, err = validate.token(request)
+    access_data, err = auth_svc.token(request)
     if err:
         return {"error": "Invalid token"}, 401
 
@@ -71,7 +72,7 @@ def download():
     Provide method for user converted mp3 file.
     Retrieves the requested file from the storage service.
     """
-    access_data, err = validate.token(request)
+    access_data, err = auth_svc.token(request)
     if err:
         return {"error": "Invalid token"}, 401
 
