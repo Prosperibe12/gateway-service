@@ -14,7 +14,7 @@ mongo = PyMongo(server)
 fs = gridfs.GridFS(mongo.db)
 
 # create a connection to Rabbitmq
-connection = pika.BlockingConnection(pika.URLParameters("rabbitmq"))
+connection = pika.BlockingConnection(pika.URLParameters("amqp://guest:guest@rabbitmq:5672/"))
 channel = connection.channel()
 
 # create an instance of AuthService Class
