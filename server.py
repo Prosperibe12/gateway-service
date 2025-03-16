@@ -1,5 +1,5 @@
 import os, gridfs, pika, json
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from auth_svc.access import AuthService
 from storage import utils
@@ -25,6 +25,33 @@ def home():
     return {"Service_Name": "Gateway Service"}
 
 # create routes to direct request to other services
+@server.route("/register/", methods=["POST"])
+def register():
+    """
+    Gateway Service registration function.
+    """
+    token, err = auth_svc.register(request)
+    if err:
+        return {"error": err}, 401
+    return {"data": token}, 200
+
+@server.route("/verify-email/", methods=["GET"])
+def verify_email():
+    """
+    Handles user email verification by forwarding the token to the authentication service.
+    """
+    # get the token from query parameters
+    token = request.args.get('token')
+
+    # Validate if the token is provided
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    # request the authentication service to verify the token
+    response_data, status_code = auth_svc.verify_email_token(token)
+
+    return jsonify(response_data), status_code
+
 @server.route("/login/", methods=["POST"])
 def login():
     """
@@ -47,9 +74,8 @@ def upload():
     if err:
         return {"error": "Invalid token"}, 401
 
-    access_data = json.loads(access_data)
-    # validate claims
-    if access_data["data"].get("token_type") == "access":
+    # Validate claims
+    if access_data.get("data", {}).get("token_type") == "access":
         if len(request.files) != 1:
             return {"error": "Only 1 file is required"}, 400
 
@@ -66,7 +92,6 @@ def upload():
 
 @server.route("/download/", methods=["GET"])
 def download():
-
     """
     Gateway Service Download function.
     Provide method for user converted mp3 file.
@@ -94,5 +119,3 @@ def download():
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=8000)
-
-    

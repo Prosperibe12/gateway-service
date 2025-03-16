@@ -21,22 +21,21 @@ def upload(f, fs, channel, access_data):
     message = {
         "video_fid": str(fid),
         "mp3_fid": None,
-        "email": access_data["data"].get("email")
+        "email": access_data.get("data", {}).get("email")
     }
     
     try:
         # publish message to queue and make it durable
         channel.basic_publish(
             exchange="",
-            routing_key="video",
+            routing_key="videos",
             body=json.dumps(message),
             properties=pika.BasicProperties(
                 delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
             ),
         )
+        print("Published")
     except Exception as er:
         # if message is not delivered, delete from the mongodb 
         fs.delete(fid)
         return {"error": f"Internal Server Error: {er}"}, 500
-    
-    return {"message": "File uploaded successfully", "file_id": str(fid)}, 200
