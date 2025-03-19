@@ -30,7 +30,7 @@ def get_next_artifact_number(container_client, branch_name):
     return max_number + 1
 
 def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
-    # Hardcoded container name
+    # Hardcoded container name, can be changed to be gotten from secrets
     container_name = "trendsartifact"
 
     # Zip the entire repository (excluding .git)
