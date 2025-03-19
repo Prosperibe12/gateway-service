@@ -75,15 +75,15 @@ def zip_repo(repo_path, output_zip_path):
                 arcname = os.path.relpath(file_path, repo_path)
                 zipf.write(file_path, arcname)
 
-def get_next_artifact_number(container_client, repo_name, branch_name):
+def get_next_artifact_number(container_client, repo_name):
     blobs = container_client.list_blobs()
     max_number = 0
-    prefix = f"{repo_name}_{branch_name}#"
+    prefix = f"{repo_name}_#"
     for blob in blobs:
         if blob.name.startswith(prefix):
             try:
-                # Extract the number from the blob name (e.g., "myrepo_auth#1.zip")
-                number = int(blob.name.split('#')[1].split('.')[0])
+                # Extract the number from the blob name (e.g., "myrepo_#1/auth_repo.zip")
+                number = int(blob.name.split('#')[1].split('/')[0])
                 if number > max_number:
                     max_number = number
             except (IndexError, ValueError):
@@ -95,7 +95,7 @@ def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
     container_name = "trendsartifact"
 
     # Zip the entire repository (excluding .git)
-    output_zip_path = f"{repo_name}_{branch_name}_repo.zip"
+    output_zip_path = f"{branch_name}_repo.zip"
     zip_repo(repo_path, output_zip_path)
 
     # Connect to Azure Blob Storage
@@ -106,9 +106,9 @@ def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
     if not container_client.exists():
         container_client.create_container()
 
-    # Get the next artifact number for the branch
-    artifact_number = get_next_artifact_number(container_client, repo_name, branch_name)
-    blob_name = f"{repo_name}_{branch_name}#{artifact_number}.zip"
+    # Get the next artifact number for the repository
+    artifact_number = get_next_artifact_number(container_client, repo_name)
+    blob_name = f"{repo_name}_#{artifact_number}/{branch_name}_repo.zip"
 
     # Upload the zipped repository
     with open(output_zip_path, "rb") as data:

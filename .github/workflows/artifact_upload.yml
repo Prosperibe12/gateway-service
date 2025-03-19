@@ -1,10 +1,9 @@
 # name: Upload Artifact to Azure
 # on:
-#     push:
-#         branches-ignore:
-#             - master
-#     workflow_dispatch:
-
+#   push:
+#     branches-ignore:
+#       - master
+#   workflow_dispatch:
 
 # jobs:
 #   build-and-upload:
@@ -30,15 +29,16 @@
 #         run: |
 #           python upload_to_azure.py "$AZURE_CONNECTION_STRING" "$CONTAINER_NAME" "artifact" "${{ github.ref_name }}"
 
-name: Upload Repository to Azure
+name: Upload Artifact to Azure
 
 on:
   push:
     branches-ignore:
-      - main
+      - master
+  workflow_dispatch:
 
 jobs:
-  upload-repo:
+  build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +48,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
