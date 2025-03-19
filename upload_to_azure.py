@@ -14,10 +14,10 @@ def zip_repo(repo_path, output_zip_path):
                 arcname = os.path.relpath(file_path, repo_path)
                 zipf.write(file_path, arcname)
 
-def get_next_artifact_number(container_client, repo_name):
+def get_next_artifact_number(container_client, branch_name):
     blobs = container_client.list_blobs()
     max_number = 0
-    prefix = f"{repo_name}_#"
+    prefix = f"{branch_name}_#"
     for blob in blobs:
         if blob.name.startswith(prefix):
             try:
@@ -46,7 +46,7 @@ def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
         container_client.create_container()
 
     # Get the next artifact number for the repository
-    artifact_number = get_next_artifact_number(container_client, repo_name)
+    artifact_number = get_next_artifact_number(container_client, branch_name)
     # blob_name = f"{repo_name}_#{artifact_number}/{branch_name}_repo.zip"
     blob_name = f"{branch_name}_#{artifact_number}/{branch_name}_{artifact_number}.zip"
 
