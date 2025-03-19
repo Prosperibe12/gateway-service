@@ -1,8 +1,10 @@
 name: Upload Artifact to Azure
 on:
-  push:
-    branches-ignore:
-      - master
+    push:
+        branches-ignore:
+            - master
+    workflow_dispatch:
+
 
 jobs:
   build-and-upload:
