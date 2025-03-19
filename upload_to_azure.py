@@ -4,6 +4,9 @@ import zipfile
 import sys
 
 def zip_repo(repo_path, output_zip_path):
+    """
+    Zip the contents of the current repository, to be uploaded to azure blob storage.
+    """
     with zipfile.ZipFile(output_zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(repo_path):
             # Exclude the .git directory
@@ -15,6 +18,10 @@ def zip_repo(repo_path, output_zip_path):
                 zipf.write(file_path, arcname)
 
 def get_next_artifact_number(container_client, branch_name):
+    """
+    Define the build number for the artifact. It first checks if the branch has made a push and 
+    uses the count, starts at 1 for new branch and 1++ for old branches. 
+    """
     blobs = container_client.list_blobs()
     max_number = 0
     prefix = f"{branch_name}_#"
@@ -30,6 +37,9 @@ def get_next_artifact_number(container_client, branch_name):
     return max_number + 1
 
 def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
+    """
+    Upload zipped artifacts to azure blob storage account using its define connection string
+    """
     # Hardcoded container name, can be changed to be gotten from secrets
     container_name = "trendsartifact"
 
