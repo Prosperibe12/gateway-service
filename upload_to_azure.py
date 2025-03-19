@@ -108,7 +108,8 @@ def upload_to_azure(connection_string, repo_path, repo_name, branch_name):
 
     # Get the next artifact number for the repository
     artifact_number = get_next_artifact_number(container_client, repo_name)
-    blob_name = f"{repo_name}_#{artifact_number}/{branch_name}_repo.zip"
+    # blob_name = f"{repo_name}_#{artifact_number}/{branch_name}_repo.zip"
+    blob_name = f"{branch_name}_#{artifact_number}/{branch_name}_{artifact_number}.zip"
 
     # Upload the zipped repository
     with open(output_zip_path, "rb") as data:
