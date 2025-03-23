@@ -1,7 +1,5 @@
-import os
-from azure.storage.blob import BlobServiceClient, ContainerClient
-import zipfile
-import sys
+import os, re, zipfile, sys
+from azure.storage.blob import BlobServiceClient
 
 def zip_repo(repo_path, output_zip_path):
     with zipfile.ZipFile(output_zip_path, 'w') as zipf:
@@ -14,18 +12,37 @@ def zip_repo(repo_path, output_zip_path):
                 arcname = os.path.relpath(file_path, repo_path)
                 zipf.write(file_path, arcname)
 
+# def get_next_folder_number(container_client, branch_name):
+#     blobs = container_client.list_blobs(name_starts_with=f"{branch_name}/")
+#     max_number = 0
+#     for blob in blobs:
+#         folder_name = blob.name.split('/')[1]  # Extract folder name (e.g., "auth/#1")
+#         if folder_name.startswith(branch_name):
+#             try:
+#                 number = int(folder_name.split('#')[1])
+#                 if number > max_number:
+#                     max_number = number
+#             except (IndexError, ValueError):
+#                 continue
+#     return max_number + 1
+
 def get_next_folder_number(container_client, branch_name):
+    """Get the next folder number for the given branch."""
     blobs = container_client.list_blobs(name_starts_with=f"{branch_name}/")
     max_number = 0
+
     for blob in blobs:
-        folder_name = blob.name.split('/')[1]  # Extract folder name (e.g., "auth/#1")
-        if folder_name.startswith(branch_name):
+        # Extract folder name (e.g., "upload/#1/artifact.zip")
+        folder_name = blob.name.split('/')[1]  # Second part of the path
+        if folder_name.startswith('#'):
             try:
-                number = int(folder_name.split('#')[1])
+                # Extract the number after the '#'
+                number = int(folder_name[1:])
                 if number > max_number:
                     max_number = number
             except (IndexError, ValueError):
                 continue
+
     return max_number + 1
 
 def upload_to_azure(connection_string, container_name, repo_path, branch_name):
