@@ -1,4 +1,4 @@
-import os, re, zipfile, sys
+import os, zipfile, sys
 from azure.storage.blob import BlobServiceClient
 
 def zip_repo(repo_path, output_zip_path):
