@@ -54,7 +54,7 @@ def upload_to_azure(connection_string, container_name, repo_path, branch_name):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python upload_to_azure.py <connection_string> <container_name> <repo_path> <branch_name>")
+        print("Usage: python test.py <connection_string> <container_name> <repo_path> <branch_name>")
         sys.exit(1)
 
     connection_string = sys.argv[1]
