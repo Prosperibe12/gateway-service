@@ -1,7 +1,21 @@
-import os, re, zipfile, sys
+import os, zipfile, sys, re
 from azure.storage.blob import BlobServiceClient
 
+def extract_repository_name(repository_path):
+    """Extract the repository name from the full repository path."""
+    # Split the path by '/' and take the last part
+    return repository_path.split('/')[-1]
+
+def sanitize_container_name(repository_name):
+    """Sanitize the repository name to make it a valid Azure container name."""
+    # Replace invalid characters with '-'
+    sanitized_name = re.sub(r'[^a-z0-9-]', '-', repository_name.lower())
+    # Ensure the name is between 3 and 63 characters
+    sanitized_name = sanitized_name[:63]
+    return sanitized_name
+
 def zip_repo(repo_path, output_zip_path):
+    """Zip the repository, excluding the .git directory."""
     with zipfile.ZipFile(output_zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(repo_path):
             # Exclude the .git directory
@@ -12,27 +26,13 @@ def zip_repo(repo_path, output_zip_path):
                 arcname = os.path.relpath(file_path, repo_path)
                 zipf.write(file_path, arcname)
 
-# def get_next_folder_number(container_client, branch_name):
-#     blobs = container_client.list_blobs(name_starts_with=f"{branch_name}/")
-#     max_number = 0
-#     for blob in blobs:
-#         folder_name = blob.name.split('/')[1]  # Extract folder name (e.g., "auth/#1")
-#         if folder_name.startswith(branch_name):
-#             try:
-#                 number = int(folder_name.split('#')[1])
-#                 if number > max_number:
-#                     max_number = number
-#             except (IndexError, ValueError):
-#                 continue
-#     return max_number + 1
-
 def get_next_folder_number(container_client, branch_name):
     """Get the next folder number for the given branch."""
     blobs = container_client.list_blobs(name_starts_with=f"{branch_name}/")
     max_number = 0
 
     for blob in blobs:
-        # Extract folder name (e.g., "upload/#1/artifact.zip")
+        # Extract folder name (e.g., "branch/#1/artifact.zip")
         folder_name = blob.name.split('/')[1]  # Second part of the path
         if folder_name.startswith('#'):
             try:
@@ -45,9 +45,14 @@ def get_next_folder_number(container_client, branch_name):
 
     return max_number + 1
 
-def upload_to_azure(connection_string, container_name, repo_path, branch_name):
+def upload_to_azure(connection_string, repo_path, repository_path, branch_name):
+    """Zip the repository and upload it to Azure Blob Storage."""
+    # Extract the repository name from the full path
+    repository_name = extract_repository_name(repository_path)
+    # Sanitize the repository name to create a valid container name
+    container_name = sanitize_container_name(repository_name)
 
-    # Zip the entire repository (excluding .git)
+    # Zip the repository (excluding .git)
     output_zip_path = f"{branch_name}_repo.zip"
     zip_repo(repo_path, output_zip_path)
 
@@ -68,16 +73,16 @@ def upload_to_azure(connection_string, container_name, repo_path, branch_name):
     with open(output_zip_path, "rb") as data:
         container_client.upload_blob(name=blob_name, data=data)
 
-    print(f"Uploaded {output_zip_path} to {blob_name}")
+    print(f"Uploaded {output_zip_path} to {blob_name} in container {container_name}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python test.py <connection_string> <container_name> <repo_path> <branch_name>")
+        print("Usage: python upload_artifacts_to_azure.py <connection_string> <repo_path> <repository_path> <branch_name>")
         sys.exit(1)
 
     connection_string = sys.argv[1]
-    container_name = sys.argv[2]
-    repo_path = sys.argv[3]
+    repo_path = sys.argv[2]
+    repository_path = sys.argv[3]
     branch_name = sys.argv[4]
 
-    upload_to_azure(connection_string, container_name, repo_path, branch_name)
+    upload_to_azure(connection_string, repo_path, repository_path, branch_name)
