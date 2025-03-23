@@ -1,12 +1,15 @@
-import os, zipfile, sys
+import os, zipfile, sys, re
 from azure.storage.blob import BlobServiceClient
+
+def extract_repository_name(repository_path):
+    """Extract the repository name from the full repository path."""
+    # Split the path by '/' and take the last part
+    return repository_path.split('/')[-1]
 
 def sanitize_container_name(repository_name):
     """Sanitize the repository name to make it a valid Azure container name."""
-    # Replace '/' with '-'
-    sanitized_name = repository_name.replace('/', '-')
-    # Convert to lowercase
-    sanitized_name = sanitized_name.lower()
+    # Replace invalid characters with '-'
+    sanitized_name = re.sub(r'[^a-z0-9-]', '-', repository_name.lower())
     # Ensure the name is between 3 and 63 characters
     sanitized_name = sanitized_name[:63]
     return sanitized_name
@@ -42,17 +45,19 @@ def get_next_folder_number(container_client, branch_name):
 
     return max_number + 1
 
-def upload_to_azure(connection_string, repo_path, repository_name, branch_name):
+def upload_to_azure(connection_string, repo_path, repository_path, branch_name):
     """Zip the repository and upload it to Azure Blob Storage."""
+    # Extract the repository name from the full path
+    repository_name = extract_repository_name(repository_path)
+    # Sanitize the repository name to create a valid container name
+    container_name = sanitize_container_name(repository_name)
+
     # Zip the repository (excluding .git)
     output_zip_path = f"{branch_name}_repo.zip"
     zip_repo(repo_path, output_zip_path)
 
     # Connect to Azure Blob Storage
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-
-    # Sanitize the repository name to create a valid container name
-    container_name = sanitize_container_name(repository_name)
     container_client = blob_service_client.get_container_client(container_name)
 
     # Ensure the container exists
@@ -72,15 +77,15 @@ def upload_to_azure(connection_string, repo_path, repository_name, branch_name):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python upload_artifacts_to_azure.py <connection_string> <repo_path> <repository_name> <branch_name>")
+        print("Usage: python upload_artifacts_to_azure.py <connection_string> <repo_path> <repository_path> <branch_name>")
         sys.exit(1)
 
     connection_string = sys.argv[1]
     repo_path = sys.argv[2]
-    repository_name = sys.argv[3]
+    repository_path = sys.argv[3]
     branch_name = sys.argv[4]
 
-    upload_to_azure(connection_string, repo_path, repository_name, branch_name)
+    upload_to_azure(connection_string, repo_path, repository_path, branch_name)
 
 # def zip_repo(repo_path, output_zip_path):
 #     with zipfile.ZipFile(output_zip_path, 'w') as zipf:
