@@ -27,6 +27,6 @@ jobs:
           AZURE_CONNECTION_STRING: ${{ secrets.AZURE_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ secrets.AZURE_CONTAINER_NAME }}
         run: |
-          python test.py "$AZURE_CONNECTION_STRING" "artifact" "${{ github.ref_name }}"
+          python test.py "$AZURE_CONNECTION_STRING" "trendtools" "artifact" "${{ github.ref_name }}"
           
 # python test.py "$AZURE_CONNECTION_STRING" "$CONTAINER_NAME" "artifact" "${{ github.ref_name "
