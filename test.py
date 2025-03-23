@@ -28,7 +28,9 @@ def get_next_folder_number(container_client, branch_name):
                 continue
     return max_number + 1
 
-def upload_to_azure(connection_string, container_name, repo_path, branch_name):
+def upload_to_azure(connection_string, repo_path, branch_name):
+    # define container name
+    container_name = "trendtools"
     # Zip the entire repository (excluding .git)
     output_zip_path = f"{branch_name}_repo.zip"
     zip_repo(repo_path, output_zip_path)
@@ -53,13 +55,13 @@ def upload_to_azure(connection_string, container_name, repo_path, branch_name):
     print(f"Uploaded {output_zip_path} to {blob_name}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 4:
         print("Usage: python test.py <connection_string> <container_name> <repo_path> <branch_name>")
         sys.exit(1)
 
     connection_string = sys.argv[1]
-    container_name = sys.argv[2]
-    repo_path = sys.argv[3]
-    branch_name = sys.argv[4]
+    # container_name = sys.argv[2]
+    repo_path = sys.argv[2]
+    branch_name = sys.argv[3]
 
-    upload_to_azure(connection_string, container_name, repo_path, branch_name)
+    upload_to_azure(connection_string, repo_path, branch_name)
