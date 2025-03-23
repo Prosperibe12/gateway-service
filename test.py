@@ -54,7 +54,7 @@ def upload_to_azure(connection_string, container_name, repo_path, branch_name):
     print(f"Uploaded {output_zip_path} to {blob_name}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Usage: python test.py <connection_string> <container_name> <repo_path> <branch_name>")
         sys.exit(1)
 
