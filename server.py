@@ -1,9 +1,12 @@
-import os, gridfs, pika, json
+import os, gridfs, pika
 from flask import Flask, request, jsonify, send_file
 from flask_pymongo import PyMongo
 from auth_svc.access import AuthService
 from storage import utils
 from bson.objectid import ObjectId
+import gridfs
+from pymongo.errors import PyMongoError
+from gridfs.errors import NoFile
 
 # instantiate flask and set mongodb url
 server = Flask(__name__)
@@ -17,8 +20,6 @@ fs_videos = gridfs.GridFS(mongo_video.db)
 fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 
 # create a connection to Rabbitmq
-# connection = pika.BlockingConnection(pika.URLParameters("amqp://guest:guest@rabbitmq:5672/"))
-# channel = connection.channel()
 parameters = pika.ConnectionParameters(
     host="rabbitmq",  
     port=5672,  
@@ -110,28 +111,46 @@ def upload():
 def download():
     """
     Gateway Service Download function.
-    Provide method for user converted mp3 file. Retrieves the requested file from the storage service.
+    Retrieves the requested file from the storage service.
     """
     access_data, err = auth_svc.token(request)
+    
     if err:
         return {"error": "Invalid token"}, 401
+    
+    # Validate claims
+    if access_data.get("data", {}).get("token_type") != "access":
+        return {"error": "Not authorized"}, 401
 
-    access_data = json.loads(access_data)
-    # validate claims
-    if access_data.get("data", {}).get("token_type") == "access":
-        file_id = request.args.get("id")
-        if not file_id:
-            return {"error": "File ID is required"}, 400
+    file_id = request.args.get("id")
+    
+    # Validate that file_id is passed
+    if not file_id:
+        return {"error": "File ID is required"}, 400
 
-        try:
-            # retrieve file from GridFS
-            file = fs_mp3s.get(ObjectId(file_id))
-            return send_file(file, download_name=f"{file_id}.mp3")
-        except Exception as err:
-            print("Download Error: ", err)
-            return {"error": "Internal Server Error"}, 500
+    # Ensure file_id is a valid ObjectId before querying GridFS
+    if not ObjectId.is_valid(file_id):
+        return {"error": "Invalid File ID format"}, 400
 
-    return {"error": "Not authorized"}, 401
+    try:
+        # Retrieve file from GridFS
+        file = fs_mp3s.get(ObjectId(file_id))
+        return send_file(file, download_name=f"{file_id}.mp3")
+
+    except NoFile:
+        # Handle missing file exception
+        print(f"Download Error: File with ID {file_id} not found in GridFS")
+        return {"error": "File not found"}, 404
+
+    except PyMongoError as db_err:
+        #Handle MongoDB-related errors
+        print(f"Download Error (MongoDB Issue): {db_err}")
+        return {"error": "Database Error"}, 500
+
+    except Exception as err: 
+        # Catch all other unexpected errors
+        print(f"Download Error: {err}")
+        return {"error": "Internal Server Error"}, 500
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=8000)
