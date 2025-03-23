@@ -26,4 +26,4 @@ jobs:
         env:
           AZURE_CONNECTION_STRING: ${{ secrets.AZURE_CONNECTION_STRING }}
         run: |
-          python test.py "$AZURE_CONNECTION_STRING" "artifact" "${{ github.repository }}" "${{ github.ref_name }}"
+          python upload_artifacts_to_azure.py "$AZURE_CONNECTION_STRING" "artifact" "${{ github.repository }}" "${{ github.ref_name }}"
