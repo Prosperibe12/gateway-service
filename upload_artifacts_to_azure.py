@@ -69,7 +69,7 @@ def upload_to_azure(connection_string, repo_path, repository_path, branch_name):
     folder_name = f"{branch_name}/#{folder_number}"
 
     # Upload the zipped repository
-    blob_name = f"{folder_name}/{output_zip_path}#{folder_name}"
+    blob_name = f"{folder_name}/{output_zip_path}"
     with open(output_zip_path, "rb") as data:
         container_client.upload_blob(name=blob_name, data=data)
 
