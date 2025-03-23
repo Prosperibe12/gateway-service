@@ -7,7 +7,7 @@ def extract_repository_name(repository_path):
     return repository_path.split('/')[-1]
 
 def sanitize_container_name(repository_name):
-    """Sanitize the repository name to make it a valid Azure container name."""
+    """Sanitize the repository name to make it a valid Azure container storage name."""
     # Replace invalid characters with '-'
     sanitized_name = re.sub(r'[^a-z0-9-]', '-', repository_name.lower())
     # Ensure the name is between 3 and 63 characters
