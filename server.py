@@ -1,20 +1,36 @@
 import os, gridfs, pika, json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_pymongo import PyMongo
 from auth_svc.access import AuthService
 from storage import utils
+from bson.objectid import ObjectId
 
 # instantiate flask and set mongodb url
 server = Flask(__name__)
-server.config["MONGO_URI"] = "mongodb://mongodb-service:27017/videos"
 
 # create a PyMongo and GridFs instance 
-mongo = PyMongo(server)
+mongo_video = PyMongo(server,uri="mongodb://mongodb-service:27017/videos")
+mongo_mp3 = PyMongo(server,uri="mongodb://mongodb-service:27017/mp3s")
+
 # create mongodb interface for sharding files and store them in chunks
-fs = gridfs.GridFS(mongo.db)
+fs_videos = gridfs.GridFS(mongo_video.db)
+fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 
 # create a connection to Rabbitmq
-connection = pika.BlockingConnection(pika.URLParameters("amqp://guest:guest@rabbitmq:5672/"))
+# connection = pika.BlockingConnection(pika.URLParameters("amqp://guest:guest@rabbitmq:5672/"))
+# channel = connection.channel()
+parameters = pika.ConnectionParameters(
+    host="rabbitmq",  
+    port=5672,  
+    credentials=pika.PlainCredentials("guest", "guest"),
+    heartbeat=30,
+    blocked_connection_timeout=300,
+    connection_attempts=10,
+    retry_delay=5,
+    socket_timeout=120
+)
+
+connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
 # create an instance of AuthService Class
@@ -82,7 +98,7 @@ def upload():
         # get request files
         for _, f in request.files.items():
             # put message in queue
-            err = utils.upload(f, fs, channel, access_data)
+            err = utils.upload(f, fs_videos, channel, access_data)
             if err:
                 return {"error": err}, 500
 
@@ -94,8 +110,7 @@ def upload():
 def download():
     """
     Gateway Service Download function.
-    Provide method for user converted mp3 file.
-    Retrieves the requested file from the storage service.
+    Provide method for user converted mp3 file. Retrieves the requested file from the storage service.
     """
     access_data, err = auth_svc.token(request)
     if err:
@@ -103,17 +118,18 @@ def download():
 
     access_data = json.loads(access_data)
     # validate claims
-    if access_data["data"].get("token_type") == "access":
-        file_id = request.args.get("file_id")
+    if access_data.get("data", {}).get("token_type") == "access":
+        file_id = request.args.get("id")
         if not file_id:
             return {"error": "File ID is required"}, 400
 
         try:
             # retrieve file from GridFS
-            file = fs.get(file_id)
-            return file.read(), 200, {"Content-Type": "application/octet-stream"}
-        except gridfs.errors.NoFile:
-            return {"error": "File not found"}, 404
+            file = fs_mp3s.get(ObjectId(file_id))
+            return send_file(file, download_name=f"{file_id}.mp3")
+        except Exception as err:
+            print("Download Error: ", err)
+            return {"error": "Internal Server Error"}, 500
 
     return {"error": "Not authorized"}, 401
 
