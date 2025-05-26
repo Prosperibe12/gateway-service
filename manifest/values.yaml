@@ -1,0 +1,85 @@
+# Configuration values for the gateway service Helm chart
+
+# Project name override for the gateway service
+projectNameOverride: gateway
+
+# Common labels for deployment
+commonLabels:
+  app: gateway
+  tier: backend
+
+# Selector labels for the deployment
+selectorLabels:
+  app: gatewayapi
+
+# Replica count for the deployment
+replicaCount: 3
+
+# Strategy for the deployment
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 1
+
+# Image configuration for the gateway service
+image:
+  name: gatewayapp
+  repository: prosperibe12/gateway-service
+  tag: latest
+  pullPolicy: Always
+  containerPort: 8080 
+
+# Resource limits and requests for the gateway service
+resources: {}
+  # limits:
+  #   memory: "512Mi"
+  #   cpu: "500m"
+  # requests:
+  #   memory: "256Mi"
+  #   cpu: "250m"
+
+# Liveness probe configuration for the gateway service
+livenessProbe:
+  httpGet:
+    path: /
+    port: 8080
+
+# service configuration for the gateway service
+service:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+
+# Configuration for the ConfigMap
+config:
+  AUTH_SVC_ADDRESS: "http://auth-svc.default.svc.cluster.local:8000/api/v1/auth/" 
+  RABBITMQ_HOST: "rabbitmq-svc"
+  RABBITMQ_PORT: 5672
+  MONGODB_HOST: "mongodb-svc"
+  VIDEO_QUEUE: "videos"
+
+# Configuration for the Horizontal Pod Autoscaler
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Configuration for gateway ingress
+ingress:
+  className: nginx
+  host: mp3converter.com
+  firstService:
+    path: /
+    pathType: Prefix
+    serviceName: gateway-svc
+    servicePort: 8080
+  secondService:
+    path: /rabbit
+    pathType: Prefix
+    serviceName: rabbitmq-svc
+    servicePort: 15672
+  tls: false
+  tlsSecretName: mp3converter-tls-secret

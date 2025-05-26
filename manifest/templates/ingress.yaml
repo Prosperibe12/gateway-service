@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "project.name" . }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec: 
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.firstService.path }}
+            pathType: {{ .Values.ingress.firstService.pathType }}
+            backend:
+              service:
+                name: {{ include "project.name" . }}-svc
+                port:
+                  number: {{ .Values.ingress.firstService.servicePort }}
+          - path: {{ .Values.ingress.secondService.path }}
+            pathType: {{ .Values.ingress.secondService.pathType }}
+            backend:
+              service:
+                name: {{ .Values.ingress.secondService.serviceName }}
+                port:
+                  number: {{ .Values.ingress.secondService.servicePort }}

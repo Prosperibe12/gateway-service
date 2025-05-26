@@ -2,4 +2,5 @@ venv
 .env
 .gitignore
 manifest
-ReadMe.md
+ReadMe.md 
+.github
