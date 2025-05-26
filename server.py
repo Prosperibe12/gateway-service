@@ -12,8 +12,9 @@ from gridfs.errors import NoFile
 server = Flask(__name__)
 
 # create a PyMongo and GridFs instance 
-mongo_video = PyMongo(server,uri="mongodb://mongodb-service:27017/videos")
-mongo_mp3 = PyMongo(server,uri="mongodb://mongodb-service:27017/mp3s")
+mongo_uri = f"mongodb://{os.environ.get('MONGODB_HOST')}:27017"
+mongo_video = PyMongo(server,uri=f"{mongo_uri}/videos")
+mongo_mp3 = PyMongo(server,uri=f"{mongo_uri}/mp3s")
 
 # create mongodb interface for sharding files and store them in chunks
 fs_videos = gridfs.GridFS(mongo_video.db)
@@ -21,8 +22,8 @@ fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 
 # create a connection to Rabbitmq
 parameters = pika.ConnectionParameters(
-    host="rabbitmq",  
-    port=5672,  
+    host=os.environ.get("RABBITMQ_HOST"),  
+    port=os.environ.get("RABBITMQ_PORT"), 
     credentials=pika.PlainCredentials("guest", "guest"),
     heartbeat=30,
     blocked_connection_timeout=300,
@@ -153,4 +154,4 @@ def download():
         return {"error": "Internal Server Error"}, 500
 
 if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=8000)
+    server.run(host="0.0.0.0", port=8080)

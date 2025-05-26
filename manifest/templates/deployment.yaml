@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "project.name" . }}-deployment
+  labels:
+    app: {{ .Values.commonLabels.app }}
+    tier: {{ .Values.commonLabels.tier }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.selectorLabels.app }}
+  {{- if .Values.strategy }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    {{- if .Values.strategy.rollingUpdate }}
+    rollingUpdate:
+    {{- toYaml .Values.strategy.rollingUpdate | nindent  6 }}
+    {{- end }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.selectorLabels.app }}
+    spec:
+      containers:
+        - name: {{ .Values.image.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.image.containerPort }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "project.name" . }}-config
