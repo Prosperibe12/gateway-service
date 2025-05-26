@@ -57,7 +57,7 @@ service:
 config:
   AUTH_SVC_ADDRESS: "http://auth-svc.default.svc.cluster.local:8000/api/v1/auth/" 
   RABBITMQ_HOST: "rabbitmq-svc"
-  RABBITMQ_PORT: 5672
+  RABBITMQ_PORT: "5672"
   MONGODB_HOST: "mongodb-svc"
   VIDEO_QUEUE: "videos"
 
