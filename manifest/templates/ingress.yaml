@@ -1,7 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "project.name" . }}-ingress
+  name: {{ include "project.name" . }}-ingress 
+  labels:
+    app: {{ .Values.commonLabels.app }}
+    tier: {{ .Values.commonLabels.tier }}
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
@@ -25,10 +28,3 @@ spec:
                 name: {{ include "project.name" . }}-svc
                 port:
                   number: {{ .Values.ingress.firstService.servicePort }}
-          - path: {{ .Values.ingress.secondService.path }}
-            pathType: {{ .Values.ingress.secondService.pathType }}
-            backend:
-              service:
-                name: {{ .Values.ingress.secondService.serviceName }}
-                port:
-                  number: {{ .Values.ingress.secondService.servicePort }}

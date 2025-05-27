@@ -76,10 +76,5 @@ ingress:
     pathType: Prefix
     serviceName: gateway-svc
     servicePort: 8080
-  secondService:
-    path: /rabbit
-    pathType: Prefix
-    serviceName: rabbitmq-svc
-    servicePort: 15672
   tls: false
   tlsSecretName: mp3converter-tls-secret
